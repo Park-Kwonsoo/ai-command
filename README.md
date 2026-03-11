@@ -46,6 +46,17 @@ API key를 직접 쓰지 않고, 이미 로그인된 CLI를 백엔드로 사용�
   - `claude`
 
 ---
+## Final Configuration
+
+아래 구성을 기준으로 사용합니다.
+
+```text
+~/.config/zsh/plugins/ai-command/
+├── ai-command.zsh
+├── bin/
+│   └── ai-command-gen
+└── setup.sh
+---
 
 ## Directory Layout
 
