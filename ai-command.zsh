@@ -1,7 +1,8 @@
 autoload -Uz colors && colors
 setopt interactivecomments
 
-: "${AI_CMD_PROVIDER:=codex}"
+: "${AI_CMD_PROVIDER:=claude}"
+: "${AI_CMD_MODEL:=claude-haiku-4-5}"
 : "${AI_CMD_UI:=1}"
 
 _ai_cmd_trim() {
@@ -13,7 +14,18 @@ _ai_cmd_trim() {
 }
 
 _ai_ui_prefix() {
-  print -nP "%B%F{45}[${AI_CMD_PROVIDER}]%f%b"
+  local color="45"
+
+  case "$AI_CMD_PROVIDER" in
+    claude)
+      color="208"
+      ;;
+    codex)
+      color="45"
+      ;;
+  esac
+
+  print -nP "%B%F{${color}}[${AI_CMD_PROVIDER}]%f%b"
 }
 
 _ai_ui_start() {
@@ -29,7 +41,7 @@ _ai_ui_start() {
   zle -I
   printf '\n'
   _ai_ui_prefix
-  print -P " %F{250}request:%f %F{230}${shown}%f"
+  print -P " %F{250}model:%f %F{111}${AI_CMD_MODEL}%f %F{250}request:%f %F{230}${shown}%f"
 }
 
 _ai_ui_done() {
@@ -92,7 +104,7 @@ _ai_replace_buffer_with_command() {
 
   if (( exit_code != 0 )) || [[ ! -s "$tmp_file" ]]; then
     _ai_ui_fail
-    zle -M "AI command generation failed (provider: $AI_CMD_PROVIDER)"
+    zle -M "AI command generation failed (provider: $AI_CMD_PROVIDER, model: $AI_CMD_MODEL)"
     rm -f "$tmp_file"
     zle reset-prompt
     return 1
@@ -146,4 +158,8 @@ zle -N _ai_toggle_provider_widget
 
 aip() {
   AI_CMD_PROVIDER="$1"
+}
+
+aim() {
+  AI_CMD_MODEL="$1"
 }

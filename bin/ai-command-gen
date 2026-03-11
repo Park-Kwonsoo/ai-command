@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-provider="${AI_CMD_PROVIDER:-codex}"
+provider="${AI_CMD_PROVIDER:-claude}"
+model="${AI_CMD_MODEL:-claude-haiku-4-5}"
 request="${*:-}"
 
 if [[ -z "${request// }" ]]; then
@@ -9,15 +10,7 @@ if [[ -z "${request// }" ]]; then
   exit 1
 fi
 
-case "$provider" in
-  codex)
-    out_file="${TMPDIR:-/tmp}/codex-last-message.txt"
-    rm -f "$out_file"
-
-    codex exec \
-      --skip-git-repo-check \
-      -o "$out_file" \
-      "Convert the following natural language request into exactly one safe macOS zsh command.
+prompt="Convert the following natural language request into exactly one safe macOS zsh command.
 
 Rules:
 - Return only the final shell command.
@@ -28,15 +21,26 @@ Rules:
 - Do not use interactive tools unless explicitly requested.
 - If the request is ambiguous, choose the most reasonable read-only/default-safe command.
 
-Request: $request" \
+Request: $request"
+
+case "$provider" in
+  codex)
+    out_file="${TMPDIR:-/tmp}/codex-last-message.txt"
+    rm -f "$out_file"
+
+    codex exec \
+      --skip-git-repo-check \
+      -o "$out_file" \
+      "$prompt" \
       >/dev/null 2>/dev/null
 
     [[ -f "$out_file" ]] || exit 1
     cat "$out_file"
     ;;
   claude)
-    claude \
-      "Convert the following natural language request into exactly one safe macOS zsh command. Return only the final shell command. No explanation. No markdown. No code fences. Request: $request" \
+    claude -p \
+      --model "$model" \
+      "$prompt" \
       2>/dev/null
     ;;
   *)
