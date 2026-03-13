@@ -28,14 +28,7 @@ _ai_command_source() {
 
 _ai_command_widget_bootstrap() {
   _ai_command_source
-
-  if typeset -f _ai_cmd_from_buffer_widget >/dev/null 2>&1; then
-    _ai_cmd_from_buffer_widget
-    return 0
-  fi
-
-  zle -M "ai-command: _ai_cmd_from_buffer_widget not found"
-  return 1
+  ai_command_handle_buffer
 }
 zle -N _ai_command_widget_bootstrap
 bindkey '\e[9;9u' _ai_command_widget_bootstrap
@@ -43,15 +36,8 @@ bindkey '\e[9;9u' _ai_command_widget_bootstrap
 _ai_command_accept_line_bootstrap() {
   if [[ "\$BUFFER" == '# '* ]]; then
     _ai_command_source
-
-    if typeset -f _ai_replace_buffer_with_command >/dev/null 2>&1; then
-      local request="\${BUFFER#\\# }"
-      _ai_replace_buffer_with_command "\$request"
-      return 0
-    fi
-
-    zle -M "ai-command: _ai_replace_buffer_with_command not found"
-    return 1
+    ai_command_handle_hash_line
+    return 0
   fi
 
   zle .accept-line
@@ -78,7 +64,6 @@ if [[ -f "${AI_BIN_DIR}/ai-command-gen" ]]; then
   chmod +x "${AI_BIN_DIR}/ai-command-gen"
 fi
 
-# stale compiled cache 제거
 rm -f "${REPO_ROOT}/ai-command.zsh.zwc"
 
 mkdir -p "$(dirname "${GHOSTTY_CONFIG}")"
@@ -111,13 +96,8 @@ awk '
 
 mv "${TMP_ZSHRC}" "${ZSHRC}"
 
-echo "==> checking ~/.zshrc bootstrap block"
-if grep -Fq "${BOOTSTRAP_START}" "${ZSHRC}"; then
-  echo "    bootstrap already exists, skip"
-else
-  printf '\n%s\n' "${BOOTSTRAP_BLOCK}" >> "${ZSHRC}"
-  echo "    added bootstrap block"
-fi
+echo "==> adding bootstrap block"
+printf '\n%s\n' "${BOOTSTRAP_BLOCK}" >> "${ZSHRC}"
 
 echo
 echo "==> done"

@@ -14,18 +14,22 @@ _ai_cmd_trim() {
 }
 
 _ai_ui_prefix() {
-  local color="45"
+  local label="$AI_CMD_PROVIDER"
+  local model_part=""
+
+  [[ -n "${AI_CMD_MODEL:-}" ]] && model_part=":%F{244}${AI_CMD_MODEL}%f"
 
   case "$AI_CMD_PROVIDER" in
     claude)
-      color="208"
+      print -nP "%B%F{208}[${label}]%f%b${model_part}"
       ;;
     codex)
-      color="45"
+      print -nP "%B%F{45}[${label}]%f%b${model_part}"
+      ;;
+    *)
+      print -nP "%B%F{250}[${label}]%f%b${model_part}"
       ;;
   esac
-
-  print -nP "%B%F{${color}}[${AI_CMD_PROVIDER}]%f%b"
 }
 
 _ai_ui_start() {
@@ -41,7 +45,7 @@ _ai_ui_start() {
   zle -I
   printf '\n'
   _ai_ui_prefix
-  print -P " %F{250}model:%f %F{111}${AI_CMD_MODEL}%f %F{250}request:%f %F{230}${shown}%f"
+  print -P " %F{250}request:%f %F{230}${shown}%f"
 }
 
 _ai_ui_done() {
@@ -104,7 +108,7 @@ _ai_replace_buffer_with_command() {
 
   if (( exit_code != 0 )) || [[ ! -s "$tmp_file" ]]; then
     _ai_ui_fail
-    zle -M "AI command generation failed (provider: $AI_CMD_PROVIDER, model: $AI_CMD_MODEL)"
+    zle -M "AI command generation failed (provider: $AI_CMD_PROVIDER)"
     rm -f "$tmp_file"
     zle reset-prompt
     return 1
@@ -129,22 +133,14 @@ _ai_replace_buffer_with_command() {
   return 0
 }
 
-_ai_cmd_from_buffer_widget() {
+ai_command_handle_buffer() {
   _ai_replace_buffer_with_command "$BUFFER"
 }
-zle -N _ai_cmd_from_buffer_widget
-bindkey '\e[9;9u' _ai_cmd_from_buffer_widget
 
-_ai_accept_line() {
-  if [[ "$BUFFER" == '# '* ]]; then
-    local request="${BUFFER#\# }"
-    _ai_replace_buffer_with_command "$request"
-    return 0
-  fi
-
-  zle .accept-line
+ai_command_handle_hash_line() {
+  local request="${BUFFER#\# }"
+  _ai_replace_buffer_with_command "$request"
 }
-zle -N accept-line _ai_accept_line
 
 _ai_toggle_provider_widget() {
   if [[ "$AI_CMD_PROVIDER" == "codex" ]]; then
